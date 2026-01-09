@@ -6,7 +6,7 @@ on:
   #  branches: [ "main" ]
     
 env:
-  UBUNTU_VERSION: 22.04
+  UBUNTU_VERSION: 24.04
   BUILDX_NO_DEFAULT_ATTESTATIONS: 1
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.2.7", python: "3.10", pytorch: "2.5.1"}
+          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1"}
     steps:
       -
         name: Free Space
@@ -37,18 +37,18 @@ jobs:
           echo "REPO_NAME=${REPO#*/}" >> ${GITHUB_ENV}
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Permissions fixes
         run: |
           target="${HOME}/work/${{ env.REPO_NAME }}/${{ env.REPO_NAME }}/build/COPY*"
           chmod -R ug+rwX ${target}
-      -
-        name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ vars.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #-
+      #  name: Login to DockerHub
+      #  uses: docker/login-action@v3
+      #  with:
+      #    username: ${{ vars.DOCKERHUB_USER }}
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -60,6 +60,7 @@ jobs:
         name: Set tags
         run: |
             img_path_ghcr="ghcr.io/${{ env.REPO_NAMESPACE }}/${{ env.REPO_NAME }}"
+            img_path_dhub="${{ vars.DOCKERHUB_USER }}/${{ env.REPO_NAME }}-cpu"
             if [[ -z '${{ matrix.build.comfyui }}' ]]; then
                 COMFYUI_BUILD_REF="$(curl -s https://api.github.com/repos/comfyanonymous/ComfyUI/tags | jq -r '.[0].name')"
             else
@@ -70,16 +71,24 @@ jobs:
 
             base_tag="v2-cpu-${{ env.UBUNTU_VERSION }}"
 
+            # Start with GHCR tags
+            TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
-                echo "Marking latest"
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-cpu"
-            else
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
+                TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-cpu"
             fi
+
+            # Add DockerHub tags only if user is provided
+            if [[ -n "${{ vars.DOCKERHUB_USER }}" ]]; then
+                TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}"
+                if [[ ${{ matrix.build.latest }} == "true" ]]; then
+                    TAGS="${TAGS}, ${img_path_dhub}:latest"
+                fi
+            fi
+            
             echo "TAGS=${TAGS}" >> ${GITHUB_ENV}
       -
         name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: build
           build-args: |
@@ -88,7 +97,6 @@ jobs:
             PYTORCH_VERSION=${{ matrix.build.pytorch }}
             COMFYUI_BUILD_REF=${{ env.COMFYUI_BUILD_REF }}
           push: true
-          # Avoids unknown/unknown architecture and extra metadata
           provenance: false
           tags: ${{ env.TAGS }}
     
@@ -98,8 +106,9 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.2.7", python: "3.10", pytorch: "2.5.1", cuda: "12.1.1-base"}
-          - {latest: "false", comfyui: "v0.2.7", python: "3.10", pytorch: "2.5.1", cuda: "12.1.1-cudnn8-devel"}
+          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-base"}
+          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-devel"}
+          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-runtime"}
     steps:
       -
         name: Free Space
@@ -120,18 +129,18 @@ jobs:
           echo "REPO_NAME=${REPO#*/}" >> ${GITHUB_ENV}
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Permissions fixes
         run: |
           target="${HOME}/work/${{ env.REPO_NAME }}/${{ env.REPO_NAME }}/build/COPY*"
           chmod -R ug+rwX ${target}
-      -
-        name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ vars.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #-
+      #  name: Login to DockerHub
+      #  uses: docker/login-action@v3
+      #  with:
+      #    username: ${{ vars.DOCKERHUB_USER }}
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -154,23 +163,28 @@ jobs:
 
           base_tag="v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}"
 
+          # Start with GHCR tags
+          TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
           if [[ ${{ matrix.build.latest }} == "true" ]]; then
-                echo "Marking latest"
-                # GHCR.io Tags
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest, ${img_path_ghcr}:latest-cuda"
-                # Docker.io Tags
-                TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}, ${img_path_dhub}:latest"
-            else
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}, ${img_path_dhub}:${COMFYUI_BUILD_REF}"
-            fi
-            # Tag a devel build
-            if [[ ${{ matrix.build.cuda }} = *-devel ]]; then
-                TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}-devel"
-            fi
+                TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest, ${img_path_ghcr}:latest-cuda"
+          fi
+
+          # Add DockerHub tags if variable exists
+          if [[ -n "${{ vars.DOCKERHUB_USER }}" ]]; then
+              TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}"
+              if [[ ${{ matrix.build.latest }} == "true" ]]; then
+                  TAGS="${TAGS}, ${img_path_dhub}:latest"
+              fi
+              # Tag a devel build
+              if [[ ${{ matrix.build.cuda }} = *-devel ]]; then
+                  TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}-devel"
+              fi
+          fi
+          
           echo "TAGS=${TAGS}" >> ${GITHUB_ENV}
       -
         name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: build
           build-args: |
@@ -188,7 +202,7 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.2.7", python: "3.10", pytorch: "2.3.1", rocm: "6.0-runtime"}
+          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", rocm: "6.0-runtime"}
     steps:
       -
         name: Free Space
@@ -209,18 +223,18 @@ jobs:
           echo "REPO_NAME=${REPO#*/}" >> ${GITHUB_ENV}
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       -
         name: Permissions fixes
         run: |
           target="${HOME}/work/${{ env.REPO_NAME }}/${{ env.REPO_NAME }}/build/COPY*"
           chmod -R ug+rwX ${target}
-      -
-        name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ vars.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #-
+      #  name: Login to DockerHub
+      #  uses: docker/login-action@v3
+      #  with:
+      #    username: ${{ vars.DOCKERHUB_USER }}
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
       -
         name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -243,19 +257,22 @@ jobs:
 
             base_tag="v2-rocm-${{ matrix.build.rocm }}-${{ env.UBUNTU_VERSION }}"
 
+            TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
-                echo "Marking latest"
-                # GHCR.io Tags
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-rocm"
-                # Docker.io Tags
-                TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}, ${img_path_dhub}:latest"
-            else
-                TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}, ${img_path_dhub}:${COMFYUI_BUILD_REF}"
+                TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-rocm"
             fi
+
+            if [[ -n "${{ vars.DOCKERHUB_USER }}" ]]; then
+                TAGS="${TAGS}, ${img_path_dhub}:${COMFYUI_BUILD_REF}"
+                if [[ ${{ matrix.build.latest }} == "true" ]]; then
+                    TAGS="${TAGS}, ${img_path_dhub}:latest"
+                fi
+            fi
+            
             echo "TAGS=${TAGS}" >> ${GITHUB_ENV}
       -
         name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: build
           build-args: |
