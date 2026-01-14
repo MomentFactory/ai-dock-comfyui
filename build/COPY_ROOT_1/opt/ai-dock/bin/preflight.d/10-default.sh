@@ -21,7 +21,7 @@ function preflight_update_comfyui() {
 }
 
 # move this to base-image
-sudo chown user.ai-dock /var/log/timing_data
+sudo chown user:ai-dock /var/log/timing_data
 
 if [[ ${SERVERLESS,,} != "true" ]]; then
     preflight_main "$@"
