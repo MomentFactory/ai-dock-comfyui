@@ -59,23 +59,23 @@ async def main():
 
   
 @app.post('/payload', response_model=Result, status_code=202)
-async def payload(
-    payload: Annotated[
+async def payload_endpoint( # Renamed function to avoid confusion with variable
+    data: Annotated[ # Renamed from 'payload' to 'data'
         Payload,
         Body(
             openapi_examples=Payload.get_openapi_examples()
         ),
     ],
 ):
-
-    if not payload.input.request_id:
-        payload.input.request_id = str(uuid.uuid4())
-    request_id = payload.input.request_id
+    # Use 'data' instead of 'payload' in the logic below
+    if not data.input.request_id:
+        data.input.request_id = str(uuid.uuid4())
+    
+    request_id = data.input.request_id
     
     result_pending = Result(id=request_id)
 
-    # Immediately store request for crash recovery (redis)
-    await request_store.set(request_id, payload)
+    await request_store.set(request_id, data)
     await response_store.set(request_id, result_pending)
     await preprocess_queue.put(request_id)
     
