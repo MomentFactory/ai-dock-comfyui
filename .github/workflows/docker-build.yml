@@ -16,7 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0"}
     steps:
       -
         name: Free Space
@@ -106,9 +107,12 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-base"}
-          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-devel"}
-          - {latest: "false", comfyui: "v0.8.2", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-runtime"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-base"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-devel"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "12.9.1-runtime"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-base"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-devel"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-runtime"}
     steps:
       -
         name: Free Space
