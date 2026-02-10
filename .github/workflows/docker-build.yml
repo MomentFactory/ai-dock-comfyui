@@ -73,7 +73,7 @@ jobs:
             base_tag="v2-cpu-${{ env.UBUNTU_VERSION }}"
 
             # Start with GHCR tags
-            TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
+            TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy${COMFYUI_BUILD_REF}"
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-cpu"
             fi
@@ -168,7 +168,7 @@ jobs:
           base_tag="v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}"
 
           # Start with GHCR tags
-          TAGS="${img_path_ghcr}:${base_tag}-${COMFYUI_BUILD_REF}"
+          TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy${COMFYUI_BUILD_REF}"
           if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest, ${img_path_ghcr}:latest-cuda"
           fi
