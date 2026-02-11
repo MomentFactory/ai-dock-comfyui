@@ -74,7 +74,7 @@ jobs:
             base_tag="v2-cpu-ubuntu${{ env.UBUNTU_VERSION }}-py${{ matrix.build.python }}"
 
             # Start with GHCR tags
-            TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy${{ matrix.build.comfyui }}
+            TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy${{ matrix.build.comfyui }}"
             if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest-cpu"
             fi
