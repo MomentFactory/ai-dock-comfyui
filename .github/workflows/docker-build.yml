@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1"}
-          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0"}
+          - {latest: "false", comfyui: "v0.13.0", python: "3.12", pytorch: "2.9.1"}
+          - {latest: "false", comfyui: "v0.13.0", python: "3.12", pytorch: "2.10.0"}
     steps:
       -
         name: Free Space
@@ -113,6 +113,12 @@ jobs:
           - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-base"}
           - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-devel"}
           - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "12.9.1-runtime"}
+          #- {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "13.0.2-base"}
+          #- {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "13.0.2-devel"}
+          #- {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.9.1", cuda: "13.0.2-runtime"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "13.0.2-base"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "13.0.2-devel"}
+          - {latest: "false", comfyui: "v0.12.3", python: "3.12", pytorch: "2.10.0", cuda: "13.0.2-runtime"}
     steps:
       -
         name: Free Space
@@ -165,10 +171,10 @@ jobs:
           [ -z "$COMFYUI_BUILD_REF" ] && { echo "Error: COMFYUI_BUILD_REF is empty. Exiting script." >&2; exit 1; }
           echo "COMFYUI_BUILD_REF=${COMFYUI_BUILD_REF}" >> ${GITHUB_ENV}
 
-          base_tag="v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}"
+          base_tag="v2-cuda-${{ matrix.build.cuda }}-ubuntu${{ env.UBUNTU_VERSION }}-py${{ matrix.build.python }}"
 
           # Start with GHCR tags
-          TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy${COMFYUI_BUILD_REF}"
+          TAGS="${img_path_ghcr}:${base_tag}-torch${{ matrix.build.pytorch }}-comfy-${COMFYUI_BUILD_REF}"
           if [[ ${{ matrix.build.latest }} == "true" ]]; then
                 TAGS="${TAGS}, ${img_path_ghcr}:${base_tag}, ${img_path_ghcr}:latest, ${img_path_ghcr}:latest-cuda"
           fi
@@ -192,7 +198,7 @@ jobs:
         with:
           context: build
           build-args: |
-            IMAGE_BASE=ghcr.io/momentfactory/ai-dock-python:${{ matrix.build.python }}-v2-cuda-${{ matrix.build.cuda }}-${{ env.UBUNTU_VERSION }}
+            IMAGE_BASE=ghcr.io/momentfactory/ai-dock-python:v2-cuda-${{ matrix.build.cuda }}-ubuntu${{ env.UBUNTU_VERSION }}-py${{ matrix.build.python }}
             PYTHON_VERSION=${{ matrix.build.python }}
             PYTORCH_VERSION=${{ matrix.build.pytorch }}
             COMFYUI_BUILD_REF=${{ env.COMFYUI_BUILD_REF }}

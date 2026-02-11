@@ -1,6 +1,6 @@
 # For build automation - Allows building from any ai-dock base image
 # Use a *cuda*base* image as default because pytorch brings the libs
-ARG IMAGE_BASE="ghcr.io/momentfactory/ai-dock-python:3.12-v2-cuda-12.9.1-base-24.04"
+ARG IMAGE_BASE="ghcr.io/momentfactory/ai-dock-python:v2-cuda-13.0.2-base-ubuntu24.04-py3.12"
 FROM ${IMAGE_BASE}
 
 LABEL org.opencontainers.image.source https://github.com/MomentFactory/ai-dock-comfyui
@@ -21,7 +21,7 @@ ENV OPT_SYNC=ComfyUI
 # Prepare environment
 ARG PYTHON_VERSION="3.12"
 ENV PYTHON_VERSION=${PYTHON_VERSION}
-ARG PYTORCH_VERSION="2.9.1"
+ARG PYTORCH_VERSION="2.10.0"
 ENV PYTORCH_VERSION="${PYTORCH_VERSION}"
 COPY --chown=0:1111 ./COPY_ROOT_0/ /
 ARG IMAGE_BASE
